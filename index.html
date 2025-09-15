@@ -1,0 +1,784 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Shattershot — Optimized (fixed)</title>
+<style>
+:root{--bg:#0b0f12;--panel:#101820;--accent:#ff4d6d;--accent-2:#6ae3ff;--muted:#93a0ad;--border:rgba(255,255,255,0.1);--ui-gap:14px;--font-sans:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:#e7eef6;font-family:var(--font-sans);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px}
+.game-title{font-size:48px;font-weight:900;background:linear-gradient(135deg,var(--accent),var(--accent-2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;letter-spacing:2px;text-transform:uppercase;text-align:center}
+.menu-wrapper{margin-top:-20px;width:100%;max-width:1200px;height:90%;display:flex;align-items:center;justify-content:center}
+.menu-card{width:100%;background:#101820cc;border:4px solid var(--border);display:flex;flex-direction:column}
+.menu-header{padding:12px 16px;background:#131d2791;border-bottom:4px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.brand{display:flex;align-items:center;gap:10px}
+.logo{width:48px;height:48px;background:linear-gradient(135deg,var(--accent),var(--accent-2));display:flex;align-items:center;justify-content:center;font-weight:700;color:#091017}
+.title .main{font-weight:700;font-size:18px}.title .tag{font-size:12px;color:var(--muted)}
+.status-pill{font-size:12px;padding:6px 10px;background:#1a252fa3;border:2px solid var(--border)}
+.menu-body{flex:1;display:grid;grid-template-columns:1fr 320px;gap:var(--ui-gap);padding:var(--ui-gap);overflow:hidden;max-height:max-content}
+.left{display:flex;flex-direction:column;gap:var(--ui-gap)}
+.btn{padding:15px 25px;font-size:22.5px;font-weight:800;border:2px solid var(--border);cursor:pointer;background:#18232e;color:inherit;transition:all .2s}
+.btn.primary{background:var(--accent);color:#091017}
+.server-select{height:350px;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;background-image:url(https://tailorthedevv.github.io/shattershot/Screenshot%202025-09-15%20095809.png);background-size:cover;background-repeat:no-repeat;background-position:center;position:relative;font-size:35px;font-weight:800;text-transform:uppercase}
+.server-arrow{font-size:40px;font-weight:900;cursor:pointer;user-select:none;padding:0 20px;color:#fff}
+.server-arrow:hover{color:var(--accent);font-size:45px}
+.panel{border:2px solid var(--border);background:#131d2791;padding:10px;display:flex;flex-direction:column;flex:1;max-height:min-content}
+.panel h4{margin-bottom:8px;font-size:14px;border-bottom:2px solid var(--border);padding-bottom:4px}
+.lb-table{width:100%;font-size:13px;border-collapse:collapse}
+.lb-table th,.lb-table td{padding:6px 8px;text-align:left;border-bottom:1px solid var(--border)}
+.yt-list{display:flex;flex-direction:column;gap:8px;flex:1;overflow-y:auto}
+.yt-item{display:flex;align-items:center;gap:8px;padding:6px;border:2px solid var(--border)}
+.avatar{width:32px;height:32px;background:#1a252fa3;display:flex;align-items:center;justify-content:center}
+.online-dot{width:10px;height:10px;margin-left:auto}
+.online{background:var(--accent-2)}
+.offline{background:#333}
+.changelog{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:8px}
+.change{border:2px solid var(--border);padding:6px;font-size:13px}
+.menu-footer{padding:10px;border-top:4px solid var(--border);background:#131d2791;display:flex;align-items:center;justify-content:space-between}
+.link{color:var(--muted);font-size:13px;text-decoration:none}
+.input-wrapper{display:flex;flex-direction:column;gap:10px}
+.input{width:100%;padding:10px 12px;font-size:14px;background:#131d2791;border:2px solid var(--border);color:inherit}
+body{color:#fff;font-family:'Helvetica Neue',Arial,sans-serif;overflow:hidden;background-color:#111}
+.ui-element{position:absolute;background-color:rgba(0,0,0,0.7);padding:15px 20px;border-radius:0;border:2px solid rgba(255,255,255,0.75)}
+#health-bar-container{position:absolute;bottom:30px;left:50%;transform:translateX(-50%);width:50%;max-width:600px;height:30px;background-color:rgba(0,0,0,0.7);border-radius:0;border:2px solid rgba(255,255,255,0.75);overflow:hidden;padding:2px}
+#health-bar{width:100%;height:100%;background-color:#db3434;transition:width .2s ease-out;border-radius:0}
+#ammo-display{bottom:30px;right:30px;font-size:32px;font-weight:bold}
+#leaderboard{top:20px;right:20px;font-size:16px}
+#leaderboard h3{margin-top:0;margin-bottom:10px;font-size:20px}
+#leaderboard ul{margin:0;padding:0;list-style:none;line-height:1.5}
+#minimap{top:20px;left:20px;width:200px;height:200px;background-color:rgba(0,0,0,0.5);display:none}
+#main-menu{position:absolute;top:0;width:100%;height:100%;background-color:rgba(0,0,0,0.5);display:flex;justify-content:center;align-items:center;z-index:10;backdrop-filter:blur(5px)}
+.menu-subtitle{font-size:18px;margin-bottom:50px;color:#aaa;letter-spacing:2px;text-transform:uppercase}
+#menu-panel{background-color:rgba(0,0,0,0.7);border:2px solid rgba(255,255,255,0.75);padding:40px;text-align:center;width:500px;position:relative}
+.menu-title{font-size:64px;font-weight:bold;margin-bottom:5px;color:#fff}
+.menu-input{width:100%;padding:15px;margin-bottom:20px;background-color:rgba(20,20,20,0.8);border:2px solid rgba(255,255,255,0.5);color:#fff;font-size:18px;text-align:center;border-radius:0}
+.menu-button{width:100%;padding:15px;font-size:24px;font-weight:bold;background-color:#db3434;color:#fff;border:none;cursor:pointer;border-radius:0;margin-bottom:30px}
+.menu-footer{margin-top:40px}
+.menu-footer a{color:#aaa;margin:0 15px;text-decoration:none;transition:color .2s}
+.menu-footer a:hover{color:#fff}
+#crosshair{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:24px;color:white;text-shadow:1px 1px 2px rgba(0,0,0,0.5);pointer-events:none;z-index:5;display:none}
+#debug-panel{position:absolute;top:230px;left:20px;background:rgba(0,0,0,0.7);padding:5px 10px;border:2px solid rgba(255,255,255,0.75);border-radius:0;color:#fff;font-size:14px;display:none}
+</style>
+</head>
+<body>
+<div class="game-title">Shattershot</div>
+<div id="main-menu" class="menu-wrapper">
+  <div class="menu-card">
+    <div class="menu-header">
+      <div class="brand">
+        <div class="title">
+          <div class="main">Main Menu</div>
+          <div class="tag">Test Arena</div>
+        </div>
+      </div>
+      <div class="status-pill" id="serverStatus">Players: <span id="srvTxt">0</span></div>
+    </div>
+    <div class="menu-body">
+      <div class="left">
+        <div class="server-select">
+          <div class="server-arrow">&lt;</div>
+          <div class="server-name">Test Arena</div>
+          <div class="server-arrow">&gt;</div>
+        </div>
+        <div class="input-wrapper">
+          <input id="name-input" class="input" placeholder="enter your name" maxlength="16" value="PlayerOne" />
+          <button class="btn primary" id="play-button">Start Battle</button>
+        </div>
+      </div>
+      <div class="right" style="display:flex;flex-direction:column;gap:var(--ui-gap)">
+        <div class="panel">
+          <h4>Leaderboard</h4>
+          <table class="lb-table">
+            <thead><tr><th>#</th><th>Player</th><th>Kills</th></tr></thead>
+            <tbody>
+              <tr><td>1</td><td>-</td><td>0</td></tr>
+              <tr><td>2</td><td>-</td><td>0</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="panel">
+          <h4>Featured Streams</h4>
+          <div class="yt-list">
+            <div class="yt-item"><div class="avatar">-</div><div>-</div><div class="online-dot offline"></div></div>
+          </div>
+        </div>
+        <div class="panel">
+          <h4>Changelog</h4>
+          <div class="changelog">
+            <div class="change"><strong>0.0.3</strong> — Hitboxes updated / velocity balance</div>
+            <div class="change"><strong>0.0.2</strong> — Reload bug fix / multiplayer</div>
+            <div class="change"><strong>0.0.1</strong> — Game made</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="menu-footer">
+      <div>
+        <a class="link" href="#">Discord</a> |
+        <a class="link" href="#">Wiki</a> |
+        <a class="link" href="#">Patreon</a>
+      </div>
+      <div style="font-size:12px;color:var(--muted)">V0.0.3 • Verified Build: 2025-09-14</div>
+    </div>
+  </div>
+</div>
+
+<div id="container"></div>
+<canvas id="minimap" class="ui-element"></canvas>
+<div id="health-bar-container"><div id="health-bar"></div></div>
+<div id="ammo-display" class="ui-element">30 / 30</div>
+<div id="leaderboard" class="ui-element">
+  <h3>Leaderboard</h3>
+  <ul id="leaderboard-list"></ul>
+</div>
+<div id="crosshair">+</div>
+<div id="debug-panel">FPS: 0</div>
+
+<script type="importmap">
+{"imports":{"three":"https://unpkg.com/three/build/three.module.js","three/addons/":"https://unpkg.com/three/examples/jsm/"}}
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+
+const App = (() => {
+  // ---------- state & UI refs ----------
+  const state = {
+    inGame: false,
+    playerHasSpawned: false,
+    myId: null,
+    gameEntities: {}, // maps id -> THREE.Object3D (players, bullets)
+    leaderboard: [],
+    socket: null,
+    playerState: { name: 'Player1', kills: 0, isReloading: false, ammo: 30, maxAmmo: 30, health: 100, maxHealth: 100 }
+  };
+
+  const UI = { healthBar: null, ammoDisplay: null, leaderboardList: null, minimap: null, minimapCtx: null, debugPanel: null, mainMenu: null, playButton: null, nameInput: null };
+
+  // ---------- three.js essentials ----------
+  let renderer, camera, scene, menuScene, composer;
+  let starPoints;
+  const fpsWindow = [];
+
+  const MAP_SIZE = 60;
+  const BULLET_VISUAL_RADIUS = 0.04;
+
+  // geometries & materials reused
+  const bulletGeometry = new THREE.IcosahedronGeometry(BULLET_VISUAL_RADIUS, 3);
+  const bulletMaterial = new THREE.MeshStandardMaterial({ color: 0x333333, roughness: 0.7, metalness: 0.2 });
+  const playerBodyGeometry = new THREE.CapsuleGeometry(0.35, 0.45, 4, 8);
+  const playerHeadGeometry = new THREE.SphereGeometry(0.3, 8, 6);
+
+  let gun = null;
+  let medkitGLB = null;
+  const medkitMeshes = {};
+
+  // ---------- DOM init ----------
+  function initDOM() {
+    UI.healthBar = document.getElementById('health-bar');
+    UI.ammoDisplay = document.getElementById('ammo-display');
+    UI.leaderboardList = document.getElementById('leaderboard-list');
+    UI.minimap = document.getElementById('minimap');
+    UI.minimap.width = 200; UI.minimap.height = 200; UI.minimapCtx = UI.minimap.getContext('2d');
+    UI.debugPanel = document.getElementById('debug-panel');
+    UI.mainMenu = document.getElementById('main-menu');
+    UI.playButton = document.getElementById('play-button');
+    UI.nameInput = document.getElementById('name-input');
+    UI.playButton.addEventListener('click', startGame);
+    document.getElementById('container').addEventListener('mousedown', () => { if (!state.inGame) startGame(); });
+  }
+
+  function initRenderer() {
+    renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.outputEncoding = THREE.sRGBEncoding;
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    document.getElementById('container').appendChild(renderer.domElement);
+    window.addEventListener('resize', onResize);
+  }
+
+  function initCamera() {
+    camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.05, 2000);
+    camera.rotation.order = 'YXZ';
+    camera.rotation.set(0, 0, 0);
+  }
+
+  function initScenes() {
+    scene = new THREE.Scene();
+    menuScene = new THREE.Scene();
+
+    const loader = new THREE.CubeTextureLoader();
+    const urls = [
+      'https://threejs.org/examples/textures/cube/MilkyWay/dark-s_px.jpg',
+      'https://threejs.org/examples/textures/cube/MilkyWay/dark-s_nx.jpg',
+      'https://threejs.org/examples/textures/cube/MilkyWay/dark-s_py.jpg',
+      'https://threejs.org/examples/textures/cube/MilkyWay/dark-s_ny.jpg',
+      'https://threejs.org/examples/textures/cube/MilkyWay/dark-s_pz.jpg',
+      'https://threejs.org/examples/textures/cube/MilkyWay/dark-s_nz.jpg'
+    ];
+    scene.background = loader.load(urls);
+
+    // subtle menu stars
+    const starsGeo = new THREE.BufferGeometry();
+    const starCount = 3000;
+    const positions = new Float32Array(starCount * 3);
+    for (let i = 0; i < starCount; i++) {
+      positions[i * 3 + 0] = (Math.random() - 0.5) * 2000;
+      positions[i * 3 + 1] = (Math.random() - 0.5) * 2000;
+      positions[i * 3 + 2] = (Math.random() - 0.5) * 2000;
+    }
+    starsGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    const starMat = new THREE.PointsMaterial({ size: 0.7 });
+    starPoints = new THREE.Points(starsGeo, starMat);
+    menuScene.add(starPoints);
+  }
+
+  function initLights() {
+    scene.add(new THREE.AmbientLight(0x0b1020, 0.5));
+    const hemi = new THREE.HemisphereLight(0x8dc1de, 0x001e2f, 0.6); hemi.position.set(0, 50, 0); scene.add(hemi);
+    const dir = new THREE.DirectionalLight(0xffffff, 1.6); dir.position.set(-10, 30, -10); dir.castShadow = true;
+    dir.shadow.camera.near = 0.5; dir.shadow.camera.far = 200; dir.shadow.camera.left = -50; dir.shadow.camera.right = 50; dir.shadow.camera.top = 50; dir.shadow.camera.bottom = -50; dir.shadow.mapSize.set(2048, 2048); scene.add(dir);
+    const rim = new THREE.DirectionalLight(0xff6ea7, 0.9); rim.position.set(6, 6, 6); scene.add(rim);
+    const spot = new THREE.SpotLight(0x6ae3ff, 2.2, 200, Math.PI / 8, 0.3, 1); spot.position.set(8, 20, 8); spot.castShadow = true; spot.shadow.mapSize.set(1024, 1024); scene.add(spot);
+    const point = new THREE.PointLight(0xffd27a, 0.8, 50); point.position.set(-6, 8, 6); scene.add(point);
+    renderer.physicallyCorrectLights = true;
+  }
+
+  function setupComposer() {
+    composer = new EffectComposer(renderer);
+    composer.addPass(new RenderPass(scene, camera));
+    const bloom = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 0.9, 0.4, 0.8);
+    bloom.threshold = 0.2; bloom.strength = 0.9; bloom.radius = 0.4; composer.addPass(bloom);
+  }
+
+  async function loadWorld() {
+    const loader = new GLTFLoader();
+    try {
+      const gltf = await new Promise((res, rej) => loader.load('https://threejs.org/examples/models/gltf/collision-world.glb', res, () => { }, rej));
+      scene.add(gltf.scene);
+      gltf.scene.traverse(child => { if (child.isMesh) { child.castShadow = true; child.receiveShadow = true; } });
+    } catch (e) { console.warn('World load failed', e); }
+    setupComposer();
+  }
+
+  // ---------- Trail system ----------
+  // Simple buffer-based trail with per-vertex alpha attribute.
+  function createTrail(maxPoints = 18) {
+    const positions = new Float32Array(maxPoints * 3);
+    const alphas = new Float32Array(maxPoints);
+    // initialize to zeros; we'll immediately fill with start pos for new bullets
+    for (let i = 0; i < positions.length; i++) positions[i] = 0;
+    for (let i = 0; i < alphas.length; i++) alphas[i] = 0;
+
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    geo.setAttribute('alpha', new THREE.BufferAttribute(alphas, 1));
+
+    const mat = new THREE.ShaderMaterial({
+      uniforms: {},
+      vertexShader: [
+        'attribute float alpha;',
+        'varying float vAlpha;',
+        'void main(){',
+        '  vAlpha = alpha;',
+        '  gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0);',
+        '}'
+      ].join('\n'),
+      fragmentShader: [
+        'varying float vAlpha;',
+        'void main(){',
+        '  gl_FragColor = vec4(1.0, 1.0, 1.0, vAlpha);',
+        '}'
+      ].join('\n'),
+      transparent: true,
+      depthWrite: false,
+      blending: THREE.AdditiveBlending
+    });
+
+    const line = new THREE.Line(geo, mat);
+    line.userData = { maxPoints };
+    return line;
+  }
+
+  // Initialize a newly-created trail buffer to a starting position (so it doesn't draw from 0,0,0)
+  function initTrailPositions(trail, startPos) {
+    const posAttr = trail.geometry.getAttribute('position');
+    const alphaAttr = trail.geometry.getAttribute('alpha');
+    for (let i = 0; i < posAttr.count; i++) {
+      posAttr.setXYZ(i, startPos.x, startPos.y, startPos.z);
+      alphaAttr.setX(i, 0); // start invisible; first element will be set to 1 on update
+    }
+    posAttr.needsUpdate = true;
+    alphaAttr.needsUpdate = true;
+  }
+
+  // ---------- gun model ----------
+  function initGun() {
+    gun = new THREE.Group();
+    const mat = new THREE.MeshStandardMaterial({ color: 0x333333, roughness: 0.6, metalness: 0.3 });
+    const body = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.2, 0.8), mat); body.position.z = -0.2;
+    const handle = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.4, 0.15), mat); handle.position.set(0, -0.2, 0.1); handle.rotation.x = -0.2;
+    gun.add(body, handle);
+    gun.position.set(0.3, -0.3, -0.5); gun.rotation.y = -Math.PI / 20; gun.userData.swing = { amount: 0.02 };
+    camera.add(gun); scene.add(camera);
+  }
+
+  async function loadMedkitGLB() {
+    if (medkitGLB) return medkitGLB;
+    const loader = new GLTFLoader();
+    return new Promise((resolve, reject) => {
+      loader.load('https://tailorthedevv.github.io/shattershot/lowpoly_medkit.glb', gltf => {
+        // Center the medkit mesh so its origin is at the center of its bounding box
+        const mesh = gltf.scene;
+        // Compute bounding box
+        const box = new THREE.Box3().setFromObject(mesh);
+        const center = new THREE.Vector3();
+        box.getCenter(center);
+        // Offset mesh so its center is at (0,0,0)
+        mesh.position.sub(center);
+        medkitGLB = mesh;
+        resolve(medkitGLB);
+      }, undefined, reject);
+    });
+  }
+
+  // ---------- WebSocket wiring ----------
+  function wireSocket() {
+    const ws = new WebSocket('ws://localhost:8080');
+    state.socket = ws;
+    ws.addEventListener('open', () => console.log('ws open'));
+    ws.addEventListener('message', e => {
+      try { handleServer(JSON.parse(e.data)); }
+      catch (err) { console.error('Invalid server message', err); }
+    });
+    ws.addEventListener('close', () => console.log('ws close'));
+  }
+
+  // ---------- robust handleServer (players + bullets) ----------
+  // NOTE: bullets will NOT be interpolated by client - they snap to server positions and use predicted velocity between ticks.
+  function handleServer(message) {
+    if (!message) return;
+    if (message.type === 'init') {
+      state.myId = message.playerId;
+      return;
+    }
+    if (message.type !== 'update') return;
+
+    // update leaderboard
+    state.leaderboard = (message.players || []).map(p => ({ name: p.name || p.id, kills: p.kills || 0 }));
+
+    // combine players & bullets
+    const serverPlayers = message.players || [];
+    const serverBullets = message.bullets || [];
+    const serverEntities = [...serverPlayers, ...serverBullets];
+    const serverIds = serverEntities.map(e => e.id);
+
+    const now = performance.now();
+
+    // process each server entity
+    for (const d of serverEntities) {
+      const id = d.id;
+      if (!id) continue;
+
+      const isPlayer = id.startsWith('player_');
+
+      // existing object?
+      let ent = state.gameEntities[id];
+
+      if (ent) {
+        // update existing
+        if (d.position) {
+          if (isPlayer) {
+            // players: smooth/interpolate
+            if (ent.position) ent.position.lerp(new THREE.Vector3(d.position.x, d.position.y, d.position.z), 0.35);
+          } else {
+            // bullets: snap to received server pos
+            if (ent.position) {
+              // compute predicted velocity for local smoothing (optional)
+              const prev = ent.userData.lastServerPos;
+              const prevT = ent.userData.lastServerTime || now;
+              const serverPos = new THREE.Vector3(d.position.x, d.position.y, d.position.z);
+              if (prev) {
+                const dt = Math.max(0.001, (now - prevT) / 1000);
+                ent.userData.predVel = serverPos.clone().sub(prev).divideScalar(dt);
+              } else {
+                ent.userData.predVel = new THREE.Vector3(0, 0, 0);
+              }
+
+              ent.position.set(d.position.x, d.position.y, d.position.z);
+              ent.userData.lastServerPos = serverPos.clone();
+              ent.userData.lastServerTime = now;
+            }
+          }
+        }
+
+        // rotation only for players
+        if (isPlayer && d.rotation && ent.quaternion) {
+          ent.quaternion.slerp(new THREE.Quaternion().setFromEuler(new THREE.Euler(d.rotation.x, d.rotation.y, d.rotation.z, 'YXZ')), 0.35);
+        }
+
+        // copy over extra metadata safely
+        if (!ent.userData) ent.userData = {};
+        for (const k in d) {
+          if (!['id', 'position', 'rotation'].includes(k)) ent.userData[k] = d[k];
+        }
+
+        // update local playerState if this is me
+        if (id === state.myId) {
+          const copy = Object.assign({}, d);
+          delete copy.id; delete copy.position; delete copy.rotation;
+          Object.assign(state.playerState, copy);
+        }
+
+        continue;
+      }
+
+      // create new entity
+      if (isPlayer) {
+        const mesh = new THREE.Group();
+        const isMe = id === state.myId;
+        const bodyMat = isMe
+          ? new THREE.MeshStandardMaterial({ color: 0x00ff00, transparent: true, opacity: 0.5 })
+          : new THREE.MeshStandardMaterial({ color: 0x0000ff });
+
+        const body = new THREE.Mesh(playerBodyGeometry, bodyMat);
+        body.position.y = 0.35 + (0.45 / 2);
+        body.castShadow = true; body.receiveShadow = true;
+
+        const head = new THREE.Mesh(playerHeadGeometry, bodyMat);
+        head.position.y = 0.35 + 0.45 + 0.15;
+        head.castShadow = true;
+
+        mesh.add(body, head);
+        mesh.userData = { ...(d || {}), serverId: id };
+
+        if (d.position) mesh.position.set(d.position.x, d.position.y, d.position.z);
+        if (d.rotation) mesh.quaternion.setFromEuler(new THREE.Euler(d.rotation.x, d.rotation.y, d.rotation.z, 'YXZ'));
+
+        state.gameEntities[id] = mesh;
+        scene.add(mesh);
+
+        if (id === state.myId) {
+          mesh.visible = false; // hide local player mesh (we render via camera)
+          const copy = Object.assign({}, d); delete copy.id; delete copy.position; delete copy.rotation;
+          Object.assign(state.playerState, copy);
+        }
+
+      } else {
+        // --- BULLET spawn ---
+        const mesh = new THREE.Mesh(bulletGeometry, bulletMaterial);
+        mesh.castShadow = true; mesh.receiveShadow = false;
+        mesh.userData = { ...(d || {}), serverId: id, predVel: new THREE.Vector3(), lastServerTime: performance.now(), lastServerPos: null, alive: true };
+
+        // initial position
+        if (d.position) {
+          mesh.position.set(d.position.x, d.position.y, d.position.z);
+          mesh.userData.lastServerPos = new THREE.Vector3(d.position.x, d.position.y, d.position.z);
+        }
+
+        // create trail and initialize it to the spawn pos (avoids weird initial diagonal)
+        const trail = createTrail(18);
+        trail.userData.ownerId = id;
+        initTrailPositions(trail, mesh.position);
+        scene.add(trail);
+        mesh.userData.trailId = trail.uuid;
+
+        state.gameEntities[id] = mesh;
+        scene.add(mesh);
+      }
+    }
+
+    // --- MEDKIT SPAWN/UPDATE/REMOVE ---
+    if (message.medkits) {
+      loadMedkitGLB().then(baseMesh => {
+        // Remove old medkits not in message
+        for (const id in medkitMeshes) {
+          if (!message.medkits.some(m => m.id === id)) {
+            scene.remove(medkitMeshes[id]);
+            delete medkitMeshes[id];
+          }
+        }
+        // Add/update medkits
+        for (const m of message.medkits) {
+          if (!medkitMeshes[m.id]) {
+            const mesh = baseMesh.clone();
+            mesh.position.set(m.position.x, m.position.y, m.position.z);
+            mesh.scale.set(0.7, 0.7, 0.7);
+            mesh.userData.isMedkit = true;
+            medkitMeshes[m.id] = mesh;
+            scene.add(mesh);
+          } else {
+            medkitMeshes[m.id].position.set(m.position.x, m.position.y, m.position.z);
+          }
+        }
+      });
+    }
+
+    // Handle removals: do NOT immediately remove bullet trails — mark them fading.
+    for (const id in state.gameEntities) {
+      if (!serverIds.includes(id)) {
+        const ent = state.gameEntities[id];
+        if (!ent) { delete state.gameEntities[id]; continue; }
+
+        // If this entity had a trail (i.e. was a bullet) — mark the trail to fade rather than remove
+        if (ent.userData && ent.userData.trailId) {
+          // find the trail by UUID (we stored trail.uuid into mesh.userData.trailId)
+          const trailObj = scene.getObjectByProperty('uuid', ent.userData.trailId);
+          if (trailObj) {
+            trailObj.userData.fading = true;
+            trailObj.userData.fadeStart = performance.now();
+            // detach owner so updateTrails will treat it as ownerless and continue fading
+            trailObj.userData.ownerId = null;
+          }
+        }
+
+        // remove the visual mesh for this entity (bullet/player)
+        scene.remove(ent);
+        delete state.gameEntities[id];
+      }
+    }
+  }
+
+  // ---------- input ----------
+  const keyStates = {};
+  function setupInput() {
+    document.addEventListener('keydown', e => { if (e.code === 'Escape' && state.inGame) returnToMenu(); if (e.code === 'KeyR') reload(); keyStates[e.code] = true; });
+    document.addEventListener('keyup', e => keyStates[e.code] = false);
+    document.addEventListener('mouseup', () => { if (document.pointerLockElement === document.body && state.inGame) { if (state.playerState.ammo > 0 && state.socket && state.socket.readyState === WebSocket.OPEN) state.socket.send(JSON.stringify({ type: 'shoot' })); else reload(); } });
+    document.body.addEventListener('mousemove', e => { if (document.pointerLockElement === document.body) { camera.rotation.y -= e.movementX / 500; camera.rotation.x -= e.movementY / 500; camera.rotation.x = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, camera.rotation.x)); } });
+  }
+
+  function reload() {
+    if (state.playerState.isReloading || state.playerState.ammo === state.playerState.maxAmmo) return;
+    state.playerState.isReloading = true;
+    UI.ammoDisplay.innerText = 'Reloading...';
+    if (state.socket && state.socket.readyState === WebSocket.OPEN) state.socket.send(JSON.stringify({ type: 'reload' }));
+  }
+
+  function startGame() {
+    if (state.inGame) return;
+    state.playerHasSpawned = false;
+    UI.mainMenu.style.display = 'none';
+    document.getElementById('health-bar-container').style.display = 'block';
+    UI.ammoDisplay.style.display = 'block';
+    document.getElementById('leaderboard').style.display = 'block';
+    document.getElementById('crosshair').style.display = 'block';
+    UI.minimap.style.display = 'block';
+    state.playerState.name = UI.nameInput.value || `Player${Math.floor(Math.random() * 1000)}`;
+    if (state.socket && state.socket.readyState === WebSocket.OPEN) state.socket.send(JSON.stringify({ type: 'join', name: state.playerState.name }));
+    document.body.requestPointerLock();
+    state.inGame = true;
+  }
+
+  function returnToMenu() {
+    UI.mainMenu.style.display = 'flex';
+    document.getElementById('crosshair').style.display = 'none';
+    UI.minimap.style.display = 'none';
+    state.inGame = false; document.exitPointerLock();
+  }
+
+  function updateHealthUI() { UI.healthBar.style.width = `${(state.playerState.health / state.playerState.maxHealth) * 100}%`; }
+
+  function updateAmmoUI() {
+    if (state.playerState.isReloading) { UI.ammoDisplay.innerText = 'Reloading...'; return; }
+    UI.ammoDisplay.innerText = `${state.playerState.ammo} / ${state.playerState.maxAmmo}`;
+  }
+
+  function updateMinimap() {
+    UI.minimapCtx.clearRect(0, 0, UI.minimap.width, UI.minimap.height);
+    const mapScale = UI.minimap.width / MAP_SIZE;
+    for (const id in state.gameEntities) {
+      if (id.startsWith('player_')) {
+        const e = state.gameEntities[id];
+        // guard
+        if (!e || !e.position) continue;
+        const mapX = (e.position.x + MAP_SIZE / 2) * mapScale;
+        const mapY = (-e.position.z + MAP_SIZE / 2) * mapScale;
+        UI.minimapCtx.fillStyle = (id === state.myId) ? '#00ff00' : '#ff0000';
+        UI.minimapCtx.beginPath(); UI.minimapCtx.arc(mapX, mapY, 3, 0, 2 * Math.PI); UI.minimapCtx.fill();
+      }
+    }
+    UI.minimapCtx.strokeStyle = 'rgba(255,255,255,0.75)'; UI.minimapCtx.lineWidth = 2; UI.minimapCtx.strokeRect(0, 0, UI.minimap.width, UI.minimap.height);
+  }
+
+  function updateLeaderboardUI() {
+    UI.leaderboardList.innerHTML = '';
+    state.leaderboard.sort((a, b) => b.kills - a.kills).forEach((p, idx) => {
+      const li = document.createElement('li'); li.textContent = `${p.name}: ${p.kills}`; UI.leaderboardList.appendChild(li);
+    });
+  }
+
+  function respawnPlayer() { camera.position.set(0, 1.35, 0); camera.rotation.set(0, 0, 0); state.playerState.health = state.playerState.maxHealth; updateHealthUI(); }
+
+  // ---------- Trails update: shift buffer & fade support ----------
+  function updateTrails(delta) {
+    // iterate scene children (trails are THREE.Line with geometry attr 'alpha' and userData.maxPoints)
+    for (let i = scene.children.length - 1; i >= 0; i--) {
+      const ch = scene.children[i];
+      if (!ch || !ch.geometry || !ch.userData || typeof ch.userData.maxPoints === 'undefined') continue;
+
+      const posAttr = ch.geometry.getAttribute('position');
+      const alphaAttr = ch.geometry.getAttribute('alpha');
+      const max = ch.userData.maxPoints;
+      if (!posAttr || !alphaAttr) continue;
+
+      const ownerId = ch.userData.ownerId;
+      const owner = ownerId ? state.gameEntities[ownerId] : null;
+
+      // shift arrays (oldest towards end)
+      for (let p = max - 1; p > 0; p--) {
+        posAttr.array[p * 3 + 0] = posAttr.array[(p - 1) * 3 + 0];
+        posAttr.array[p * 3 + 1] = posAttr.array[(p - 1) * 3 + 1];
+        posAttr.array[p * 3 + 2] = posAttr.array[(p - 1) * 3 + 2];
+        alphaAttr.array[p] = alphaAttr.array[p - 1] * 0.92;
+      }
+
+      if (owner && owner.position) {
+        // bullet alive: new head equals current owner position
+        posAttr.array[0] = owner.position.x; posAttr.array[1] = owner.position.y; posAttr.array[2] = owner.position.z;
+        alphaAttr.array[0] = 1.0;
+      } else {
+        // owner no longer exists: fade head down gradually (preserves previous points)
+        alphaAttr.array[0] = Math.max(0, alphaAttr.array[0] - delta * 1.5);
+        // keep position static (so trail fades in place)
+      }
+
+      // overall gradual fade of all segments to avoid harsh cut
+      for (let a = 0; a < alphaAttr.count; a++) alphaAttr.array[a] = Math.max(0, alphaAttr.array[a] - delta * 0.6);
+
+      posAttr.needsUpdate = true;
+      alphaAttr.needsUpdate = true;
+
+      // If trail was explicitly marked 'fading' we gradually reduce whole-trail opacity and remove when empty
+      if (ch.userData.fading) {
+        // optionally use ch.userData.fadeStart for time-based fade; already alphaAttr is being decreased above
+        // check if all alphas are ~0 then remove
+        let anyAlpha = false;
+        for (let a = 0; a < alphaAttr.count; a++) {
+          if (alphaAttr.array[a] > 0.001) { anyAlpha = true; break; }
+        }
+        if (!anyAlpha) {
+          scene.remove(ch);
+        }
+      }
+    }
+  }
+
+  // ---------- bullet local smoothing (prediction) ----------
+  function updateBulletsLocalPrediction(delta) {
+    // For each bullet in state.gameEntities: if we have a predVel, move it a bit locally between server updates
+    for (const id in state.gameEntities) {
+      if (!id.startsWith('bullet_')) continue;
+      const ent = state.gameEntities[id];
+      if (!ent || !ent.userData) continue;
+
+      // If the bullet was just updated by server this frame we snapped above, skip moving to avoid jitter.
+      // Otherwise use predVel to advance.
+      const lastServerTime = ent.userData.lastServerTime || 0;
+      const now = performance.now();
+      const since = (now - lastServerTime) / 1000;
+
+      // if it's been some time since the server update (e.g. 16ms+), advance using predVel
+      if (since > 0.012 && ent.userData.predVel) {
+        ent.position.addScaledVector(ent.userData.predVel, delta);
+      }
+    }
+  }
+
+  // ---------- gun sway ----------
+  let swayTime = 0;
+  function applyGunSway(delta) {
+    if (!gun) return;
+    const moving = keyStates['KeyW'] || keyStates['KeyA'] || keyStates['KeyS'] || keyStates['KeyD'];
+    if (moving) { swayTime += delta * 6; gun.position.x = 0.3 + Math.sin(swayTime) * 0.02; gun.position.y = -0.3 + Math.cos(swayTime * 2) * 0.01; }
+    else { gun.position.x += (0.3 - gun.position.x) * Math.min(1, delta * 6); gun.position.y += (-0.3 - gun.position.y) * Math.min(1, delta * 6); }
+  }
+
+  // ---------- main loop ----------
+  let lastFrame = performance.now();
+  function animate() {
+    const now = performance.now();
+    const delta = (now - lastFrame) / 1000; lastFrame = now;
+
+    while (fpsWindow.length > 0 && fpsWindow[0] <= now - 1000) fpsWindow.shift();
+    fpsWindow.push(now);
+    if (UI.debugPanel) UI.debugPanel.textContent = `FPS: ${fpsWindow.length}`;
+
+    if (state.inGame) {
+      // send input to server
+      if (state.socket && state.socket.readyState === WebSocket.OPEN) {
+        state.socket.send(JSON.stringify({ type: 'input', keys: keyStates, rotation: { x: camera.rotation.x, y: camera.rotation.y, z: camera.rotation.z } }));
+      }
+
+      // update camera to follow local player if present
+      if (state.myId && state.gameEntities[state.myId]) {
+        state.playerHasSpawned = true;
+        const myPlayer = state.gameEntities[state.myId];
+        if (myPlayer.position) {
+          myPlayer.visible = false;
+          const cameraOffset = new THREE.Vector3(0, 1.0, 0); // keep camera offset as you prefer
+          camera.position.copy(myPlayer.position).add(cameraOffset);
+        }
+      } else if (state.myId && !state.gameEntities[state.myId] && state.playerHasSpawned) {
+        // we died/respawned -> return to menu
+        returnToMenu();
+      }
+
+      updateHealthUI(); updateAmmoUI(); updateLeaderboardUI(); updateMinimap();
+
+      // bullet local prediction MUST run before trail update (so trail uses updated bullet pos)
+      updateBulletsLocalPrediction(delta);
+      updateTrails(delta);
+      applyGunSway(delta);
+
+      // Spin medkits
+      for (const mesh of Object.values(medkitMeshes)) {
+        mesh.rotation.y += 0.02;
+      }
+
+      if (composer) composer.render(delta); else renderer.render(scene, camera);
+    } else {
+      starPoints.rotation.y += 0.0002;
+      renderer.render(menuScene, camera);
+    }
+
+    requestAnimationFrame(animate);
+  }
+
+  function onResize() {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    if (composer) composer.setSize(window.innerWidth, window.innerHeight);
+  }
+
+  // ---------- startup ----------
+  async function start() {
+    initDOM();
+    initRenderer();
+    initCamera();
+    initScenes();
+    initLights();
+    initGun();
+    setupInput();
+    wireSocket();
+    await loadWorld();
+    setupComposer();
+    animate();
+  }
+
+  return { start };
+})();
+
+App.start();
+</script>
+</body>
+</html>
